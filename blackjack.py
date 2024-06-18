@@ -54,6 +54,8 @@ def start_game():
     tk.Label(player_frame, text=f"{name}'s Hand", font=('arial', 15, 'bold'), bg='green', fg='white').pack(padx=10, pady=10)    
     for card in player_hand:
         tk.Label(player_frame, text=f"{card[0]} of {card[1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
+    player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
+    player_points_label.pack(padx=5, pady=5)
 
 
     dealer_frame = tk.Frame(root, bg='green')
@@ -75,7 +77,6 @@ def start_game():
 
 
 
-
 def hit():
     player_hand.append(deck.pop())
     tk.Label(player_frame, text=f"{player_hand[-1][0]} of {player_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
@@ -85,6 +86,11 @@ def stand():
     # Add the stuff
     pass
 
+
+def current_points(hand):
+    values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 1}
+    points = sum(values[card[0]] for card in hand)
+    return points
 
 
 
