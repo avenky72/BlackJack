@@ -80,7 +80,10 @@ def start_game():
 def hit():
     player_hand.append(deck.pop())
     tk.Label(player_frame, text=f"{player_hand[-1][0]} of {player_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
-    # Add the stuff
+    points = current_points(player_hand)
+    if points > 21:
+        print("Player busts! Dealer wins.")
+        # Create an game over screen instead
 
 def stand():
     # Add the stuff
