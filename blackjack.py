@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 import random
 
+""" Next Steps: Show the result on the game screen instead of creating a new end screen
+Create a play again button
+Add the special cards that make it BlackJack 2.0"""
+
 def show_rules():
     # More efficient way to clear widgets
     for widget in root.winfo_children():
@@ -55,8 +59,7 @@ def start_game():
     for card in player_hand:
         tk.Label(player_frame, text=f"{card[0]} of {card[1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
     print(current_points(player_hand))
-    #player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
-    #player_points_label.pack(padx=5, pady=5)
+    
 
 
     dealer_frame = tk.Frame(root, bg='green')
@@ -105,7 +108,6 @@ def stand():
         end_game("You Lose, Dealer Had ", d_points)
     else:
         while d_points <= current_points(player_hand):
-        # While the dealer total is less than 18, auto hit
             dealer_hand.append(deck.pop())
             tk.Label(dealer_frame, text=f"{dealer_hand[-1][0]} of {dealer_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
             d_points = current_points(dealer_hand)
