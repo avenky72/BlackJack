@@ -54,8 +54,9 @@ def start_game():
     tk.Label(player_frame, text=f"{name}'s Hand", font=('arial', 15, 'bold'), bg='green', fg='white').pack(padx=10, pady=10)    
     for card in player_hand:
         tk.Label(player_frame, text=f"{card[0]} of {card[1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
-    player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
-    player_points_label.pack(padx=5, pady=5)
+    print(current_points(player_hand))
+    #player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
+    #player_points_label.pack(padx=5, pady=5)
 
 
     dealer_frame = tk.Frame(root, bg='green')
@@ -80,14 +81,40 @@ def start_game():
 def hit():
     player_hand.append(deck.pop())
     tk.Label(player_frame, text=f"{player_hand[-1][0]} of {player_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
+    global points
     points = current_points(player_hand)
+    print(points)
     if points > 21:
-        print("Player busts! Dealer wins.")
-        # Create an game over screen instead
+        end_game("Game Over, Your Hand is a Bust")
+    if points == 21:
+        end_game("You Win")
+        
+        
+def end_game(message):
+    for widget in root.winfo_children():
+        widget.destroy()
+    result_label = tk.Label(root, text=message, font=('arial', 20, 'bold'), bg='wheat3', fg='navy')
+    result_label.pack(padx=20, pady=20)
+
 
 def stand():
-    # Add the stuff
-    pass
+    global d_points
+    d_points = current_points(dealer_hand)
+    print("dealer: ", d_points)
+    if d_points > current_points(player_hand):
+        end_game("You Lose, Dealer Had ", d_points)
+    else:
+        while d_points <= current_points(player_hand):
+        # While the dealer total is less than 18, auto hit
+            dealer_hand.append(deck.pop())
+            tk.Label(dealer_frame, text=f"{dealer_hand[-1][0]} of {dealer_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
+            d_points = current_points(dealer_hand)
+            print("dealer: ", d_points)
+            if d_points > 21:
+                end_game("You Win, Dealer's Hand is a Bust")
+            elif d_points > current_points(player_hand):
+                end_game("You Lose, Dealer Had ", d_points)
+
 
 
 def current_points(hand):
