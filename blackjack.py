@@ -4,10 +4,6 @@ from tkinter import *
 import random
 import time
 
-""" Next Steps: Show the result on the game screen instead of creating a new end screen
-Create a play again button
-Add the special cards that make it BlackJack 2.0"""
-
 def show_rules():
     # More efficient way to clear widgets
     for widget in root.winfo_children():
@@ -19,13 +15,19 @@ def show_rules():
 
 
 
-def cards():
+
+def cards(include_special=False):
     # Showing the cards as value, suit instead of using images
-    # Change to add the special cards after everything works
+    # Two decks: regular deck for opening hands and a special deck that is a clone of the regular deck with the added special cards to prevent them from being drawn in the opening hand
+    # Reason for this is to prevent drawing an Add card and a Face card and auto losing
     suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-    values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', 'Minus']
+    values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+    special_values = ['Minus', 'Add', 'Divide']
     deck = [(value, suit) for suit in suits for value in values]
+    if include_special:
+        deck += [(value, suit) for suit in suits for value in special_values]
     return deck
+
 
 
 def save_name():
@@ -38,22 +40,27 @@ def save_name():
     name_field.insert(0, greeting)
 
 
+
+
+
 def start_game():
     for widget in root.winfo_children():
         widget.destroy()
         
-        
-    global deck, player_hand, dealer_hand, player_frame, dealer_frame
-    deck = cards()
+    global deck, special_deck, player_hand, dealer_hand, player_frame, dealer_frame
+    deck = cards(include_special=False)  # Initial deck without special cards
+    special_deck = cards(include_special=True)  # Deck with special cards for hits
     random.shuffle(deck)
+    random.shuffle(special_deck)
     player_hand = []
     dealer_hand = []
 
 
-    player_hand.append(deck.pop())
-    player_hand.append(deck.pop())
-    dealer_hand.append(deck.pop())
-    dealer_hand.append(deck.pop())
+    # Drawing initial hands from the regular deck
+    player_hand.append(draw_initial_card())
+    player_hand.append(draw_initial_card())
+    dealer_hand.append(draw_initial_card())
+    dealer_hand.append(draw_initial_card())
 
 
 
@@ -62,13 +69,17 @@ def start_game():
     tk.Label(player_frame, text=f"{name}'s Hand", font=('arial', 15, 'bold'), bg='green', fg='white').pack(padx=10, pady=10)    
     for card in player_hand:
         tk.Label(player_frame, text=f"{card[0]} of {card[1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
-    print(current_points(player_hand))
+    
     global player_points_label
     player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
     player_points_label.pack(padx=5, pady=5)
     
     global hidden
     hidden = True
+
+
+
+
 
     dealer_frame = tk.Frame(root, bg='green')
     dealer_frame.pack(side=tk.RIGHT, padx=10, pady=10)
@@ -79,9 +90,11 @@ def start_game():
         label.pack(padx=5, pady=5)
 
 
+
+
     control_frame = tk.Frame(root, bg='green')
     control_frame.pack(pady=10)
-    hit_button = tk.Button(control_frame, text="Hit", font=('arial', 15, 'bold'), bg="magenta4", fg="red", command=hit)
+    hit_button = tk.Button(control_frame, text="Hit", font=('arial', 15, 'bold'), bg="magenta4", fg="red", command=lambda: hit(special_deck))
     hit_button.pack(side=tk.LEFT, padx=10)
     stand_button = tk.Button(control_frame, text="Stand", font=('arial', 15, 'bold'), bg="magenta4", fg="red", command=stand)
     stand_button.pack(side=tk.LEFT, padx=10)
@@ -90,24 +103,28 @@ def start_game():
 
 
 
-def hit():
+def draw_initial_card():
+    card = deck.pop()
+    special_deck.remove(card)
+    return card
+
+
+
+
+def hit(deck):
     player_hand.append(deck.pop())
     tk.Label(player_frame, text=f"{player_hand[-1][0]} of {player_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
-    global points
     points = current_points(player_hand)
-    print(points)
-    player_points_label = tk.Label(player_frame, text=f"Points: {current_points(player_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
-    player_points_label.pack(padx=5, pady=5)
-    message4 = "Game Over, Your Hand is a Bust: {}".format(points)
+    player_points_label.config(text=f"Points: {points}")
+    print(f"Player points: {points}")
     if points > 21:
-        end_game(message4)
-    if points == 21:
+        end_game(f"Game Over, Your Hand is a Bust: {points}")
+    elif points == 21:
         end_game("You Win")
-        
-        
-        
-        
-        
+
+
+
+
 def end_game(message):
     for widget in root.winfo_children():
         widget.destroy()
@@ -117,43 +134,55 @@ def end_game(message):
 
 
 
-
 def stand():
-    global d_points
     global hidden
     hidden = False
+    for widget in dealer_frame.winfo_children():
+        widget.destroy()
+    tk.Label(dealer_frame, text="Dealer's Hand", font=('arial', 15, 'bold'), bg='green', fg='white').pack(padx=10, pady=10)
     for card in dealer_hand:
-        tk.Label(dealer_frame, text=f"{card[0]} of {card[1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
+        label_text = f"{card[0]} of {card[1]}"
+        label = tk.Label(dealer_frame, text=label_text, font=('arial', 15, 'bold'), bg='white', fg='black')
+        label.pack(padx=5, pady=5)
+    root.after(2000, dealer_turn)
+
+
+
+
+
+def dealer_turn():
+    global d_points
     d_points = current_points(dealer_hand)
-    dealer_points_label = tk.Label(dealer_frame, text=f"Points: {current_points(dealer_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
-    dealer_points_label.pack(padx=5, pady=5)
-    #time.sleep(2)
-    print("dealer: ", d_points)
-    message = "You Lose, Dealer Had: {}".format(d_points)
+    print(f"Dealer points: {d_points}")
+    message = f"You Lose, Dealer Had: {d_points}"
     if d_points > current_points(player_hand):
-        end_game(str(message))
+        end_game(message)
     else:
         while d_points <= current_points(player_hand):
             dealer_hand.append(deck.pop())
             tk.Label(dealer_frame, text=f"{dealer_hand[-1][0]} of {dealer_hand[-1][1]}", font=('arial', 15, 'bold'), bg='white', fg='black').pack(padx=5, pady=5)
-            dealer_points_label = tk.Label(dealer_frame, text=f"Points: {current_points(dealer_hand)}", font=('arial', 15, 'bold'), bg='green', fg='white')
-            dealer_points_label.pack(padx=5, pady=5)
-            #time.sleep(2)
             d_points = current_points(dealer_hand)
-            print("dealer: ", d_points)
-            message2 = "You Lose, Dealer Had: {}".format(d_points)
-            message3 = "You Win, Dealer's Hand is a Bust: {}".format(d_points)
+            print(f"Dealer points: {d_points}")
             if d_points > 21:
-                end_game(message3)
+                end_game(f"You Win, Dealer's Hand is a Bust: {d_points}")
+                return
             elif d_points > current_points(player_hand):
-                end_game(str(message2))
+                end_game(f"You Lose, Dealer Had: {d_points}")
+                return
+
+
 
 
 
 def current_points(hand):
-    values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 1, 'Minus':-10, 'Plus': 15}
+    values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'Jack': 10, 'Queen': 10, 'King': 10, 'Ace': 1, 'Minus': -10, 'Add': 15, 'Divide': 0}
     points = sum(values[card[0]] for card in hand)
+    if any(card[0] == 'Divide' for card in hand):
+        points = points // 2
     return points
+
+
+
 
 
 
@@ -161,6 +190,7 @@ def current_points(hand):
 root = tk.Tk()
 root.title("Black Jack 2.0")
 root.configure(background='wheat3')
+
 
 
 
@@ -172,11 +202,15 @@ start_button = tk.Button(root, font=('arial', 15, 'bold'), text="Start", bg="mag
 
 
 
+
 name_label.pack(padx=5, pady=5)
 name_entry.pack(padx=5, pady=5)
 name_button.pack(padx=5, pady=5)
 name_field.pack(padx=5, pady=5)
 start_button.pack(padx=5, pady=5)
+
+
+
 
 
 
